@@ -13,13 +13,13 @@ class SQLiteDB:
         self.con = sqlite3.connect(self.path)
         cur = self.con.cursor()
         logging.info(f"Creating table {self.table}")
-        cur.execute(f"CREATE TABLE if not exists {self.table}(item_id, address, rooms, floor, size, price, seller_type, date)")
+        cur.execute(f"CREATE TABLE if not exists {self.table}(id integer primary key, item_id, address, rooms, floor, size, price, seller_type, date, valid)")
         self.con.commit()
         logging.info("Fetching results")
         res = cur.execute(f"SELECT * FROM {self.table}")
         logging.info(f"Total entries in {self.table} - {len(res.fetchall())}")
-        self.insertion_query = f''' INSERT INTO {self.table}(item_id, address, rooms, floor, size, price, seller_type, date)
-              VALUES(?,?,?,?,?,?,?,?) '''
+        self.insertion_query = f''' INSERT INTO {self.table}(id, item_id, address, rooms, floor, size, price, seller_type, date, valid)
+              VALUES(NULL,?,?,?,?,?,?,?,?,1) '''
 
     def get_matches_by_id(self, item_id):
         cur = self.con.cursor()

@@ -14,15 +14,42 @@ class Orchestrator:
     # TODO: refactor
     def __init__(self, target):
         self.target = target
-        self.db = SQLiteDB("../../resources/db", self.target)
+        self.db = SQLiteDB("/Users/antonp/code/house_polling/resources/db", self.target)
         self.url = TARGET_URLS.get(self.target)
         assert self.url
         log.info(f"Starting Orchestrator with target: {self.target}")
-        self.page_handler = PageHandler(self.url, self.db)
+        self.page_number = 1
 
 
     def run(self):
-        pass
+        options = Options()
+        options.add_argument(
+            "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36")
+        driver = webdriver.Chrome(options=options)
+        log.info(f"[!]Loading {self.url}")
+        driver.get(self.url)
+        input("Please wait until all validations are finished and press any key")
+        # Handle pagination
+        pages_to_iterate = 1
+        pagination = driver.find_elements(By.CLASS_NAME, "numbers")
+        if pagination:
+            pages_to_iterate = len(pagination[0].find_elements(By.TAG_NAME, "a")) + len(pagination[0].find_elements(By.TAG_NAME, "button"))
+            log.info(f"[!]There are {pages_to_iterate} pages to iterate")
+
+        self._handle_page(driver)
+        while self.page_number <= pages_to_iterate:
+            paged_url = self.url + f"&page={self.page_number}"
+            log.info(f"[!]Loading {paged_url}")
+            driver.get(paged_url)
+            self._handle_page(driver)
+
+    def _handle_page(self, driver):
+        input("Please wait until all validations are finished and press any key")
+        page_content = driver.page_source
+        page_handler = PageHandler(page_content, self.db)
+        page_handler.process()
+        self.page_number += 1
+
 
 if __name__ == "__main__":
     print("testing started")

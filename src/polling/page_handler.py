@@ -31,7 +31,8 @@ class PageHandler:
                 # Get possible rows
                 possible_enties = self.dbhandler.get_matches_by_id(entry.item_id)
                 if possible_enties:
-                    last_price = possible_enties[0][5]
+                    last_price = possible_enties[0][6]
+                    print(last_price)
                     if entry.price != last_price:
                         log.info(f"Price update - old price {last_price}!! : {entry}")
                         self.dbhandler.add_entry(entry)
