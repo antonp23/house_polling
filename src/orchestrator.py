@@ -23,6 +23,7 @@ class Orchestrator:
 
     def run(self):
         options = Options()
+        active_items = self.db.get_active_item_ids()
         options.add_argument(
             "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36")
         driver = webdriver.Chrome(options=options)
@@ -36,19 +37,25 @@ class Orchestrator:
             pages_to_iterate = len(pagination[0].find_elements(By.TAG_NAME, "a")) + len(pagination[0].find_elements(By.TAG_NAME, "button"))
             log.info(f"[!]There are {pages_to_iterate} pages to iterate")
 
-        self._handle_page(driver)
+        active_items = active_items.difference(set(self._handle_page(driver)))
         while self.page_number <= pages_to_iterate:
             paged_url = self.url + f"&page={self.page_number}"
             log.info(f"[!]Loading {paged_url}")
             driver.get(paged_url)
-            self._handle_page(driver)
+            active_items = active_items.difference(set(self._handle_page(driver)))
+        log.info(f"[!]After processing all items {len(active_items)} were deleted!")
+        for deleted_item in active_items:
+            self.db.change_status_by_item_id(deleted_item)
+
+
 
     def _handle_page(self, driver):
         input("Please wait until all validations are finished and press any key")
         page_content = driver.page_source
         page_handler = PageHandler(page_content, self.db)
-        page_handler.process()
+        processed_entries = page_handler.process()
         self.page_number += 1
+        return processed_entries
 
 
 if __name__ == "__main__":
